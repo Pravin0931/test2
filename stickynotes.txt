@@ -1,0 +1,29 @@
+
+54.191.36.197
+
+Root/admin2123
+Admin/root@123
+
+
+647426478431
+SysOpsLogicalRole
+CotuLogicalRole
+
+804438605645 
+SysOpsLogicalRole
+
+35.166.5.106
+
+34.228.186.15
+
+oosec
+
+what is instance in stopped state
+how to remove inative agent
+use cloudwatch rule to install agent and ssm role attach
+
+[?2/?11/?2019 2:41 PM]  Kenguva, Sambasiva (Cognizant):  
+Got any luck on SNS delivery tracking?
+
+
+-ig?6Q2ymN4-

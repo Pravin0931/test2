@@ -1,0 +1,62 @@
+﻿SSL offload -- 
+
+Web servers and their clients (web browsers) can use Secure Sockets Layer (SSL) or Transport Layer Security (TLS). These protocols confirm the identity of the web server and establish a secure connection to send and receive webpages or other data over the internet. This is commonly known as HTTPS. The web server uses a public–private key pair and an SSL/TLS public key certificate to establish an HTTPS session with each client. This process involves a lot of computation for the web server, but you can offload some of this to the HSMs in your AWS CloudHSM cluster. This is sometimes known as SSL acceleration. Offloading reduces the computational burden on your web server and provides extra security by storing the server's private key in the HSMs.
+
+https://docs.aws.amazon.com/cloudhsm/latest/userguide/ssl-offload.html
+
+###############################################
+
+
+Cloudformer in cloudformation template which helps to build template from existing active environment. 
+
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-using-cloudformer.html
+
+###############################################
+
+OSSEC 
+
+OSSEC is an open-source, host-based intrusion detection system (HIDS) that performs log analysis, integrity checking, Windows registry monitoring, rootkit detection, time-based alerting, and active response. It's the application to install on your server if you want to keep an eye on what's happening inside it.
+
+Linux:
+
+https://www.digitalocean.com/community/tutorials/how-to-monitor-ossec-agents-using-an-ossec-server-on-ubuntu-14-04
+
+https://blog.rapid7.com/2017/06/30/how-to-install-and-configure-ossec-on-ubuntu-linux/ 
+
+Windows:
+
+http://parthicloud.com/ossec-agent-installation-in-windows-step-by-step/
+
+
+Automation:
+
+Linux:
+
+https://github.com/BinaryDefense/auto-ossec
+https://github.com/BinaryDefense/auto-ossec/blob/master/requirements.txt
+https://stro.io/automated-ossec-agent-registration-with-alienvault-usm/ 
+
+https://www.sbarjatiya.com/notes_wiki/index.php/Automated_OSSEC_installation_using_ansible
+https://linuxscriptshub.com/ansible-automation-for-ossec-agent-on-ubuntu-120414041604-playbook-ready/
+
+Client end script:
+https://github.com/BinaryDefense/auto-ossec/blob/master/auto_ossec.py
+
+Server end script:
+https://github.com/BinaryDefense/auto-ossec/blob/master/auto_server.py
+
+
+###############################################
+
+
+Lambda Auto Invoke in Cloudformation:
+
+Lambda Send success signal to cloudformation to complete stack.
+
+https://blog.shikisoft.com/provisioning-custom-cloudformation-resource-using-aws-lambda/
+
+https://www.puresec.io/blog/a-deep-dive-on-aws-cloudformation-custom-resources
+
+#######################################################################
+  
+Snowflake - s3 data analytic, data ingest 
