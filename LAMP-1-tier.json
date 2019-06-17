@@ -1,0 +1,566 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+
+	"Description": "LAMP Stack Template to deploy Single EC2 Server under ALB in eu-west-1",
+	"Metadata": {
+		"AWS::CloudFormation::Interface": {
+			"ParameterGroups": [{
+					"Label": {
+						"default": "Resource Configuration"
+					},
+					"Parameters": ["AMI", "InstanceType", "VpcId"]
+				}
+			]
+		}
+	},
+
+	"Parameters": {
+		"AMI": {
+			"Description": "Please provide the AMI ID:",
+			"Type": "String",
+			"Default": "ami-xxxxxxxx"
+		},
+
+		"InstanceType": {
+			"Description": "EC2 instance type",
+			"Type": "String",
+			"Default": "t2.micro",
+			"AllowedValues": ["t2.nano", "t2.micro", "t2.small", "t2.medium", "t2.large", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge"],
+			"ConstraintDescription": "must be a valid EC2 instance type."
+		},
+		"VpcId": {
+			"Description": "Select VPC",
+			"Type": "AWS::EC2::VPC::Id"
+		}
+	},
+
+	"Resources": {
+		"SNSTopicDef": {
+			"Type": "AWS::SNS::Topic"
+		},
+		"LAMPstackTopicPolicy": {
+			"DependsOn" : "SNSTopicDef",
+			"Type": "AWS::SNS::TopicPolicy",
+			"Properties": {
+				"PolicyDocument": {
+					"Version": "2008-10-17",
+					"Id": "__default_policy_ID",
+					"Statement": [{
+						"Sid": "__default_statement_ID",
+						"Effect": "Allow",
+						"Principal": {
+							"AWS": "*"
+						},
+						"Action": [
+							"SNS:GetTopicAttributes",
+							"SNS:SetTopicAttributes",
+							"SNS:AddPermission",
+							"SNS:RemovePermission",
+							"SNS:DeleteTopic",
+							"SNS:Subscribe",
+							"SNS:ListSubscriptionsByTopic",
+							"SNS:Publish",
+							"SNS:Receive"
+						],
+						"Resource": {
+							"Fn::Join": [":", ["arn:aws:sns:eu-west-1", {
+								"Ref": "AWS::AccountId"
+							}, {"Fn::GetAtt" : [ "SNSTopicDef" , "TopicName" ]}]]
+						},
+						"Condition": {
+							"StringEquals": {
+								"AWS:SourceOwner": {
+									"Ref": "AWS::AccountId"
+								}
+							}
+						}
+					}]
+				},
+				"Topics": [{
+					"Fn::Join": [":", ["arn:aws:sns:eu-west-1", {
+						"Ref": "AWS::AccountId"
+					}, {"Fn::GetAtt" : [ "SNSTopicDef" , "TopicName" ]}]]
+				}]
+			}
+		},
+		"UnhealthyInstanceAlarm1a": {
+	"Type": "AWS::CloudWatch::Alarm",
+	"Properties": {
+		"ActionsEnabled": true,
+		"AlarmActions": [{"Ref": "SNSTopicDef"}],
+		"AlarmDescription": "UnhealthyInstanceAlarm in AZ eu-west-1a alarm",
+		"MetricName": "UnHealthyHostCount",
+		"Namespace": "AWS/ApplicationELB",
+		"Statistic": "Average",
+		"Period": "300",
+		"EvaluationPeriods": "1",
+		"Threshold": "1",
+		"ComparisonOperator": "GreaterThanOrEqualToThreshold",
+		"Dimensions": [{
+				"Name": "TargetGroup",
+				"Value": {"Fn::GetAtt": ["ApplicationLoadBalancerTargetGroup", "TargetGroupFullName"]}
+			},{
+				"Name": "LoadBalancer",
+				"Value": {"Fn::GetAtt": ["ApplicationLoadBalancer", "LoadBalancerFullName"]}
+			},{
+				"Name": "AvailabilityZone",
+				"Value": "eu-west-1a"
+			}
+		]
+	}
+},
+"UnhealthyInstanceAlarm1b": {
+"Type": "AWS::CloudWatch::Alarm",
+"Properties": {
+"ActionsEnabled": true,
+"AlarmActions": [{"Ref": "SNSTopicDef"}],
+"AlarmDescription": "UnhealthyInstanceAlarm in AZ eu-west-1a alarm",
+"MetricName": "UnHealthyHostCount",
+"Namespace": "AWS/ApplicationELB",
+"Statistic": "Average",
+"Period": "300",
+"EvaluationPeriods": "1",
+"Threshold": "1",
+"ComparisonOperator": "GreaterThanOrEqualToThreshold",
+"Dimensions": [{
+		"Name": "TargetGroup",
+		"Value": {"Fn::GetAtt": ["ApplicationLoadBalancerTargetGroup", "TargetGroupFullName"]}
+	},{
+		"Name": "LoadBalancer",
+		"Value": {"Fn::GetAtt": ["ApplicationLoadBalancer", "LoadBalancerFullName"]}
+	},{
+		"Name": "AvailabilityZone",
+		"Value": "eu-west-1b"
+	}
+]
+}
+},
+"UnhealthyInstanceAlarm1c": {
+"Type": "AWS::CloudWatch::Alarm",
+"Properties": {
+"ActionsEnabled": true,
+"AlarmActions": [{"Ref": "SNSTopicDef"}],
+"AlarmDescription": "UnhealthyInstanceAlarm in AZ eu-west-1a alarm",
+"MetricName": "UnHealthyHostCount",
+"Namespace": "AWS/ApplicationELB",
+"Statistic": "Average",
+"Period": "300",
+"EvaluationPeriods": "1",
+"Threshold": "1",
+"ComparisonOperator": "GreaterThanOrEqualToThreshold",
+"Dimensions": [{
+		"Name": "TargetGroup",
+		"Value": {"Fn::GetAtt": ["ApplicationLoadBalancerTargetGroup", "TargetGroupFullName"]}
+	},{
+		"Name": "LoadBalancer",
+		"Value": {"Fn::GetAtt": ["ApplicationLoadBalancer", "LoadBalancerFullName"]}
+	},{
+		"Name": "AvailabilityZone",
+		"Value": "eu-west-1c"
+	}
+]
+}
+},
+		"LAMPHostInstanceRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [{
+						"Effect": "Allow",
+						"Principal": {
+							"Service": ["ec2.amazonaws.com"]
+						},
+						"Action": ["sts:AssumeRole"]
+					}]
+				},
+				"Path": "/",
+				"ManagedPolicyArns":[{"Fn::Join":[":",["arn:aws:iam:",{"Ref":"AWS::AccountId"},"policy/UploadSSHKeys"]]}],
+				"Policies": [{
+					"PolicyName": "AllowLogging",
+					"PolicyDocument": {
+						"Version": "2012-10-17",
+						"Statement": [{
+							"Effect": "Allow",
+							"Action": [
+								"logs:CreateLogGroup",
+								"logs:CreateLogStream",
+								"logs:PutLogEvents",
+								"logs:PutRetentionPolicy",
+								"logs:DescribeLogStreams",
+								"logs:GetLogEvents",
+								"cloudwatch:PutMetricData",
+								"cloudwatch:GetMetricStatistics",
+								"cloudwatch:ListMetrics",
+								"ec2:DescribeTags",
+								"elasticloadbalancing:DescribeTargetHealth"
+							],
+							"Resource": "*"
+						}]
+					}
+				}]
+			}
+		},
+		"LAMPHostInstanceProfile": {
+			"Type": "AWS::IAM::InstanceProfile",
+			"Properties": {
+				"Path": "/",
+				"Roles": [{
+					"Ref": "LAMPHostInstanceRole"
+				}]
+			}
+		},
+    "LaunchConfig": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "AssociatePublicIpAddress": false,
+        "ImageId": {"Ref": "AMI"},
+        "InstanceMonitoring": true,
+        "InstanceType": {"Ref": "InstanceType"},
+        "IamInstanceProfile": {"Ref": "LAMPHostInstanceProfile"},
+        "SecurityGroups": [{"Ref": "SecurityGroupEC2"}],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": ["", [
+              "#cloud-config\n",
+              "repo_update: true\n",
+              "repo_upgrade: all\n",
+              "\n",
+              "timezone: Europe/Amsterdam\n",
+              "package_update: true\n",
+              "package_upgrade: true\n",
+              "packages:\n",
+              " - awslogs\n",
+              " - httpd24\n",
+              " - php56\n",
+              " - mysql55-server\n",
+              " - php56-mysqlnd\n",
+              " - perl-Switch\n",
+              " - perl-DateTime\n",
+              " - perl-Sys-Syslog\n",
+              " - perl-LWP-Protocol-https\n",
+              "\n",
+              "runcmd:\n",
+              " - sed -i \"s/^region =.*/region = eu-west-1/g\" /etc/awslogs/awscli.conf\n",
+              " - sed -i -e \"s/instance_id/$(curl http://169.254.169.254//latest/meta-data/instance-id)/g\" /etc/awslogs/awslogs.conf\n",
+              " - groupadd www\n",
+              " - usermod -a -G www ec2-user\n",
+              " - service awslogs start\n",
+              " - chkconfig awslogs on\n",
+              " - service httpd start\n",
+              " - chkconfig httpd on\n",
+              " - service mysqld start\n",
+              " - chkconfig mysqld on\n",
+              " - wget http://aws-cloudwatch.s3.amazonaws.com/downloads/CloudWatchMonitoringScripts-1.2.1.zip\n",
+              " - unzip CloudWatchMonitoringScripts-1.2.1.zip\n",
+              " - rm CloudWatchMonitoringScripts-1.2.1.zip\n",
+              " - cd aws-scripts-mon\n",
+              " - ./mon-put-instance-data.pl --mem-util --verify --verbose\n",
+              " - echo \"*/5 * * * * ec2-user /aws-scripts-mon/mon-put-instance-data.pl --mem-util --mem-used --mem-avail --disk-space-util --disk-path=/dev/xvda1 --from-cron\" >> /etc/crontab\n",
+              " - service crond restart\n",
+              " - service crond status\n",
+              "\n",
+              "write_files:\n",
+              " - path: /etc/sudoers\n",
+              "   owner: root:root\n",
+              "   permissions: '0600'\n",
+              "   content: |\n",
+              "     %wheel ALL=(ALL) NOPASSWD:ALL\n",
+              "\n",
+              " - path: /etc/awslogs/awslogs.conf\n",
+              "   owner: root:root\n",
+              "   permissions: '0600'\n",
+              "   content: |\n",
+              "     [general]\n",
+              "     state_file = /var/lib/awslogs/agent-state\n",
+              "     [/var/log/dmesg]\n",
+              "     file = /var/log/dmesg\n",
+              "     log_group_name = /var/log/dmesg\n",
+              "     log_stream_name = instance_id\n",
+              "     [/var/log/messages]\n",
+              "     file = /var/log/messages\n",
+              "     log_group_name = /var/log/messages\n",
+              "     log_stream_name = instance_id\n",
+              "     datetime_format = %b %d %H:%M:%S\n",
+              "     [/var/log/secure]\n",
+              "     file = /var/log/secure\n",
+              "     log_group_name = /var/log/secure\n",
+              "     log_stream_name = instance_id\n",
+              "     datetime_format = %b %d %H:%M:%S\n",
+              " - path: /var/www/html/phpinfo.php\n",
+              "   owner: root:root\n",
+              "   permissions: '0644'\n",
+              "   content: |\n",
+              "     <?php phpinfo(); ?>\n",
+              " - path: /var/www/html/index.html\n",
+              "   owner: root:root\n",
+              "   permissions: '0644'\n",
+              "   content: |\n",
+              "     <strong>Hi A! This is hosted in AWS.</strong><br /><br />\n",
+              "\n"
+            ]]
+          }
+        }
+      }
+    },
+    "SecurityGroupEC2": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "AllowLAMPStack",
+        "SecurityGroupEgress": [{
+          "IpProtocol": "-1",
+          "FromPort": "-1",
+          "ToPort": "-1",
+          "CidrIp": "0.0.0.0/0"
+        }],
+        "SecurityGroupIngress": [{
+          "IpProtocol": "6",
+          "FromPort": "22",
+          "ToPort": "22",
+          "CidrIp": "10.0.0.0/8"
+        }, {
+          "IpProtocol": "6",
+          "FromPort": "80",
+          "ToPort": "80",
+          "SourceSecurityGroupId" : {"Fn::GetAtt" : [ "SecurityGroupALB" , "GroupId" ]}
+        }, {
+          "IpProtocol": "6",
+          "FromPort": "443",
+          "ToPort": "443",
+          "SourceSecurityGroupId" : {"Fn::GetAtt" : [ "SecurityGroupALB" , "GroupId" ]}
+        }],
+        "VpcId": {
+          "Ref": "VpcId"
+        }
+      }
+    },
+    "SecurityGroupALB": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "AllowLAMPStackELB",
+        "SecurityGroupEgress": [{
+          "IpProtocol": "-1",
+          "FromPort": "-1",
+          "ToPort": "-1",
+          "CidrIp": "0.0.0.0/0"
+        }],
+        "SecurityGroupIngress": [{
+          "IpProtocol": "6",
+          "FromPort": "80",
+          "ToPort": "80",
+          "CidrIp": "0.0.0.0/0"
+        }, {
+          "IpProtocol": "6",
+          "FromPort": "443",
+          "ToPort": "443",
+          "CidrIp": "0.0.0.0/0"
+        }],
+        "VpcId": {
+          "Ref": "VpcId"
+        }
+      }
+    },
+    "AutoScalingGroup": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "DesiredCapacity": 1,
+        "MinSize": 1,
+        "MaxSize": 1,
+        "TargetGroupARNs": [{
+          "Ref": "ApplicationLoadBalancerTargetGroup"
+        }],
+        "VPCZoneIdentifier": [{
+          "Fn::ImportValue": {
+            "Fn::Sub": "VPCCreate-PrivateSubnet1Id"
+          }
+        }, {
+          "Fn::ImportValue": {
+            "Fn::Sub": "VPCCreate-PrivateSubnet2Id"
+          }
+        }, {
+          "Fn::ImportValue": {
+            "Fn::Sub": "VPCCreate-PrivateSubnet3Id"
+          }
+        }],
+        "LaunchConfigurationName": {
+          "Ref": "LaunchConfig"
+        },
+        "MetricsCollection": [{"Granularity": "1Minute"}]
+      }
+    },
+		"ApplicationScaleUpPolicy" : {
+		 "Type" : "AWS::AutoScaling::ScalingPolicy",
+		 "Properties" : {
+			 "AdjustmentType" : "ChangeInCapacity",
+			 "AutoScalingGroupName" : { "Ref" : "AutoScalingGroup" },
+			 "Cooldown" : "60",
+			 "ScalingAdjustment" : "1"
+		 }
+	 },
+	 "ApplicationScaleDownPolicy" : {
+		 "Type" : "AWS::AutoScaling::ScalingPolicy",
+		 "Properties" : {
+			 "AdjustmentType" : "ChangeInCapacity",
+			 "AutoScalingGroupName" : { "Ref" : "AutoScalingGroup" },
+			 "Cooldown" : "60",
+			 "ScalingAdjustment" : "-1"
+		 }
+	 },
+
+	 "CPUAlarmHigh": {
+		"Type": "AWS::CloudWatch::Alarm",
+		"Properties": {
+			 "AlarmDescription": "Scale-up if CPU > 90% for 10 minutes",
+			 "MetricName": "CPUUtilization",
+			 "Namespace": "AWS/EC2",
+			 "Statistic": "Average",
+			 "Period": "300",
+			 "EvaluationPeriods": "2",
+			 "Threshold": "90",
+			 "AlarmActions": [ { "Ref": "ApplicationScaleUpPolicy"}, {"Ref":"SNSTopicDef"}],
+			 "Dimensions": [
+				 {
+					 "Name": "AutoScalingGroupName",
+					 "Value": { "Ref": "AutoScalingGroup" }
+				 }
+			 ],
+			 "ComparisonOperator": "GreaterThanThreshold"
+		 }
+	 },
+	 "CPUAlarmLow": {
+		"Type": "AWS::CloudWatch::Alarm",
+		"Properties": {
+			 "AlarmDescription": "Scale-down if CPU < 70% for 10 minutes",
+			 "MetricName": "CPUUtilization",
+			 "Namespace": "AWS/EC2",
+			 "Statistic": "Average",
+			 "Period": "300",
+			 "EvaluationPeriods": "2",
+			 "Threshold": "70",
+			 "AlarmActions": [ { "Ref": "ApplicationScaleDownPolicy" }, {"Ref":"SNSTopicDef"}],
+			 "Dimensions": [
+				 {
+					 "Name": "AutoScalingGroupName",
+					 "Value": { "Ref": "AutoScalingGroup" }
+				 }
+			 ],
+			 "ComparisonOperator": "LessThanThreshold"
+		 }
+	 },
+    "ApplicationLoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Scheme": "internet-facing",
+        "Subnets": [{
+          "Fn::ImportValue": {
+            "Fn::Sub": "VPCCreate-PublicSubnet1Id"
+          }
+        }, {
+          "Fn::ImportValue": {
+            "Fn::Sub": "VPCCreate-PublicSubnet2Id"
+          }
+        }, {
+          "Fn::ImportValue": {
+            "Fn::Sub": "VPCCreate-PublicSubnet3Id"
+          }
+        }],
+        "LoadBalancerAttributes": [{
+          "Key": "idle_timeout.timeout_seconds",
+          "Value": "50"
+        },
+				{
+					"Key": "access_logs.s3.enabled",
+					"Value": "true"
+				},
+				{
+					"Key": "access_logs.s3.bucket",
+					"Value": {"Fn::ImportValue" : {"Fn::Sub" : "aab-s3bucket-alb-logging-S3ALBloggingBucket"}}
+				}
+			],
+        "SecurityGroups": [{
+          "Ref": "SecurityGroupALB"
+        }]
+      }
+    },
+    "ApplicationLoadBalancerTargetGroup": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "HealthCheckIntervalSeconds": 60,
+        "UnhealthyThresholdCount": 10,
+        "HealthCheckPath": "/phpinfo.php",
+        "Port": 80,
+        "Protocol": "HTTP",
+        "VpcId": {
+          "Ref": "VpcId"
+        }
+      }
+    },
+    "ApplicationLoadBalancerListener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "DefaultActions": [{
+          "Type": "forward",
+          "TargetGroupArn": {
+            "Ref": "ApplicationLoadBalancerTargetGroup"
+          }
+        }],
+        "LoadBalancerArn": {
+          "Ref": "ApplicationLoadBalancer"
+        },
+        "Port": "80",
+        "Protocol": "HTTP"
+      }
+    }
+	},
+
+	"Outputs": {
+		"AutoScalingGroup": {
+			"Description": "The AutoScalingGroup",
+			"Value": {
+				"Ref": "AutoScalingGroup"
+			}
+		},
+		"AutoScalingGroupArn": {
+			"Description": "The AutoScaling TragetGroup ARNs",
+			"Value": {
+				"Ref": "ApplicationLoadBalancerTargetGroup"
+			}
+		},
+		"LAMPHostInstanceRole": {
+			"Description": "The IAM LAMPHostInstanceRole Role",
+			"Value": {
+				"Ref": "LAMPHostInstanceRole"
+			}
+		},
+		"LAMPHostInstanceProfile": {
+			"Description": "The IAM LAMPHostInstanceProfile Profile",
+			"Value": {
+				"Ref": "LAMPHostInstanceProfile"
+			}
+		},
+		"LaunchConfig": {
+			"Description": "The LaunchConfig",
+			"Value": {
+				"Ref": "LaunchConfig"
+			}
+		},
+		"SecurityGroupEC2": {
+			"Description": "The SecurityGroup for EC2 hosts",
+			"Value": {
+				"Ref": "SecurityGroupEC2"
+			}
+		},
+		"SecurityGroupALB": {
+			"Description": "The SecurityGroup for the ALB",
+			"Value": {
+				"Ref": "SecurityGroupALB"
+			}
+		},
+		"ApplicationLoadBalancer": {
+			"Description": "The DNSName for the ALB",
+			"Value": {
+				"Fn::GetAtt": ["ApplicationLoadBalancer", "DNSName"]
+			}
+		}
+	}
+}
