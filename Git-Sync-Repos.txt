@@ -1,0 +1,28 @@
+#!/bin/bash
+
+REPO_NAME=<repo>.git
+
+ORIGIN_URL=git@<host>:<project>/$REPO_NAME
+
+REPO1_URL=git@<host>:<project>/$REPO_NAME
+
+Origin_branch=''
+Repo_branch=''
+
+rm -rf $REPO_NAME
+
+git clone --bare $ORIGIN_URL
+
+cd $REPO_NAME
+
+git remote add --mirror=fetch repo1 $REPO1_URL
+
+git fetch origin --tags
+
+git fetch origin --all
+
+git checkout origin/master -b $Origin_branch
+
+git push repo1 -b $Repo_branch
+
+git push repo1 --tags
